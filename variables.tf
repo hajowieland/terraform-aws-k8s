@@ -1,7 +1,13 @@
 variable "enable_amazon" {
-  description = "Enable / Disable Amazon (e.g. `1`)"
+  description = "Enable / Disable Amazon Web Services k8s (e.g. `true`)"
   type        = bool
   default     = true
+}
+
+variable "random_cluster_suffix" {
+  description = "Random 6 byte hex suffix for cluster name"
+  type = string
+  default = ""
 }
 
 variable "aws_region" {
@@ -22,17 +28,22 @@ variable "aws_profile" {
 # }
 
 variable "eks_nodes" {
-  description = "EKS Kubernetes worker nodes (e.g. `2`)"
+  description = "EKS Kubernetes worker nodes, desired ASG capacity (e.g. `2`)"
   default     = 2
   type = number
 }
 
-variable "random_cluster_suffix" {
-  description = "Random 6 byte hex suffix for cluster name"
-  type = string
-  default = ""
+variable "eks_min_nodes" {
+  description = "EKS Kubernetes worker nodes, minimal ASG capacity (e.g. `1`)"
+  default     = 1
+  type = number
 }
 
+variable "eks_max_nodes" {
+  description = "EKS Kubernetes worker nodes, maximal ASG capacity (e.g. `3`)"
+  default     = 3
+  type = number
+}
 
 variable "aws_cidr_block" {
   description = "AWS VPC CIDR block (e.g. `10.0.23.0/16`)"
@@ -42,6 +53,7 @@ variable "aws_cidr_block" {
 
 variable "aws_subnets" {
   description = "List of 8-bit numbers of subnets base_cidr_block"
+  type = number
   default     = 2
 }
 
@@ -58,9 +70,9 @@ variable "aws_instance_type" {
   default     = "t3.medium"
 }
 
-variable "aws_eks_version" {
-  description = "AWS EKS cluster version (e.g. `1.13`)"
-  type = string
-  default = "1.13"
-}
+# variable "aws_eks_version" {
+#   description = "AWS EKS cluster version (e.g. `1.13`)"
+#   type = string
+#   default = "1.13"
+# }
 
