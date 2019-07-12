@@ -4,12 +4,12 @@ resource "random_id" "cluster_name" {
 
 
 resource "random_id" "username" {
-  count    = var.enable_google ? 1 : 0
+  count    = var.enable_amazon ? 1 : 0
   byte_length = 14
 }
 
 resource "random_id" "password" {
-  count    = var.enable_google ? 1 : 0
+  count    = var.enable_amazon ? 1 : 0
   byte_length = 18
 }
 
@@ -46,7 +46,7 @@ data "aws_ami" "eks-worker" {
 # VPC
 resource "aws_vpc" "demo" {
   count = var.enable_amazon ? 1 : 0
-  cidr_block = var.cidr_block
+  cidr_block = var.aws_cidr_block
 
   tags = "${
     map(
@@ -58,10 +58,10 @@ resource "aws_vpc" "demo" {
 }
 
 resource "aws_subnet" "demo" {
-  count = var.enable_amazon ? var.subnets : 0
+  count = var.enable_amazon ? var.aws_subnets : 0
 
   availability_zone = data.aws_availability_zones.available.0.names[count.index]
-  cidr_block        = cidrsubnet(var.cidr_block, 8, count.index)
+  cidr_block        = cidrsubnet(var.aws_cidr_block, 8, count.index)
   vpc_id            = aws_vpc.demo.0.id
 
   tags = "${
@@ -101,7 +101,7 @@ resource "aws_route_table" "demo" {
 }
 
 resource "aws_route_table_association" "demo" {
-  count = var.enable_amazon ? var.subnets : 0
+  count = var.enable_amazon ? var.aws_subnets : 0
 
   subnet_id      = aws_subnet.demo.*.id[count.index]
   route_table_id = aws_route_table.demo.0.id
@@ -176,7 +176,7 @@ resource "aws_security_group" "demo-cluster" {
 resource "aws_security_group_rule" "demo-cluster-ingress-workstation-https" {
   count = var.enable_amazon ? 1 : 0
 
-  cidr_blocks = ["${var.workstation_ipv4}"]
+  cidr_blocks = [local.workstation-external-cidr]
   description = "Allow workstation to communicate with the cluster API Server"
   from_port = 443
   protocol = "tcp"
@@ -353,9 +353,9 @@ resource "aws_launch_configuration" "demo" {
 
 resource "aws_autoscaling_group" "demo" {
   count = var.enable_amazon ? 1 : 0
-  desired_capacity = var.nodes
+  desired_capacity = var.eks_nodes
   launch_configuration = aws_launch_configuration.demo.0.id
-  max_size = var.nodes
+  max_size = var.eks_nodes
   min_size = 1
   name = "terraform-eks"
   vpc_zone_identifier = aws_subnet.demo.*.id
