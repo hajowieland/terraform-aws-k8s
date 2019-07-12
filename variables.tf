@@ -16,11 +16,10 @@ variable "aws_profile" {
   default = "default"
 }
 
-
-variable "workstation_ipv4" {
-  description = "Workstation external IPv4 address"
-  type = string
-}
+# variable "workstation_ipv4" {
+#   description = "Workstation external IPv4 address"
+#   type = string
+# }
 
 variable "eks_nodes" {
   description = "EKS Kubernetes worker nodes (e.g. `2`)"
@@ -46,17 +45,6 @@ variable "aws_subnets" {
   default     = 2
 }
 
-variable "aws_region" {
-  description = "AWS region (e.g. `eu-central-1` => Frankfurt)"
-  type        = string
-  default     = "eu-central-1"
-}
-
-variable "aws_profile" {
-  description = "AWS cli profile (e.g. `default`)"
-  type = string
-  default = "default"
-}
 
 variable "aws_cluster_name" {
   description = "AWS ELS cluster name (e.g. `k8s-eks`)"
