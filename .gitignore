@@ -7,3 +7,10 @@
 
 # .tfvars files
 *.tfvars
+
+# Ignore generated kube files
+aws_config_map_aws_auth
+kubeconfig_eks
+
+# Ignore aws-iam-authenticator executable
+aws-iam-authenticator
