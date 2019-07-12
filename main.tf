@@ -193,7 +193,7 @@ resource "aws_eks_cluster" "demo" {
 
   name = "${var.aws_cluster_name}-${var.random_cluster_suffix}"
   role_arn = aws_iam_role.demo-cluster.0.arn
-  version = var.aws_eks_version
+  #version = var.aws_eks_version
 
   vpc_config {
     security_group_ids = ["${aws_security_group.demo-cluster.0.id}"]
@@ -355,8 +355,8 @@ resource "aws_autoscaling_group" "demo" {
   count = var.enable_amazon ? 1 : 0
   desired_capacity = var.eks_nodes
   launch_configuration = aws_launch_configuration.demo.0.id
-  max_size = var.eks_nodes
-  min_size = 1
+  max_size = var.eks_max_nodes
+  min_size = var.eks_min_nodes
   name = "terraform-eks"
   vpc_zone_identifier = aws_subnet.demo.*.id
 
@@ -449,8 +449,19 @@ resource "local_file" "eks_config_map_aws_auth" {
 resource "null_resource" "aws_iam_authenticator" {
   count = var.enable_amazon ? 1 : 0
   provisioner "local-exec" {
-    command = "curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/aws-iam-authenticator; chmod +x ./aws-iam-authenticator; mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$HOME/bin:$PATH"
+    command = <<EOF
+if [ \"$(uname)\" == \"Darwin\" ]; \
+  then curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/darwin/amd64/aws-iam-authenticator; \
+elif [ \"$(expr substr $(uname -s) 1 5)\" == \"Linux\" ]; \
+  then curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/aws-iam-authenticator; \
+fi; \
+chmod +x ./aws-iam-authenticator; \
+mkdir -p $HOME/bin && \
+cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && \
+export PATH=$HOME/bin:$PATH
+EOF
   }
+
   depends_on = [local_file.eks_config_map_aws_auth]
 }
 
