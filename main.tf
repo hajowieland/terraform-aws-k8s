@@ -34,7 +34,7 @@ data "aws_ami" "eks-worker" {
   count = var.enable_amazon ? 1 : 0
   filter {
     name   = "name"
-    values = ["amazon-eks-node-${aws_eks_cluster.demo.0.version}-v*"]
+    values = ["amazon-eks-node-${aws_eks_cluster.cluster.0.version}-v*"]
   }
 
   most_recent = true
@@ -44,7 +44,7 @@ data "aws_ami" "eks-worker" {
 
 
 # VPC
-resource "aws_vpc" "demo" {
+resource "aws_vpc" "main" {
   count = var.enable_amazon ? 1 : 0
   cidr_block = var.aws_cidr_block
 
@@ -57,12 +57,12 @@ resource "aws_vpc" "demo" {
   }"
 }
 
-resource "aws_subnet" "demo" {
+resource "aws_subnet" "public" {
   count = var.enable_amazon ? var.aws_subnets : 0
 
   availability_zone = data.aws_availability_zones.available.0.names[count.index]
   cidr_block        = cidrsubnet(var.aws_cidr_block, 8, count.index)
-  vpc_id            = aws_vpc.demo.0.id
+  vpc_id            = aws_vpc.main.0.id
 
   tags = "${
     map(
@@ -73,10 +73,10 @@ resource "aws_subnet" "demo" {
   }"
 }
 
-resource "aws_internet_gateway" "demo" {
+resource "aws_internet_gateway" "igw" {
   count = var.enable_amazon ? 1 : 0
 
-  vpc_id = aws_vpc.demo.0.id
+  vpc_id = aws_vpc.main.0.id
 
   tags = {
     Project = "k8s",
@@ -84,14 +84,14 @@ resource "aws_internet_gateway" "demo" {
   }
 }
 
-resource "aws_route_table" "demo" {
+resource "aws_route_table" "rt" {
   count = var.enable_amazon ? 1 : 0
 
-  vpc_id = aws_vpc.demo.0.id
+  vpc_id = aws_vpc.main.0.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.demo.0.id
+    gateway_id = aws_internet_gateway.igw.0.id
   }
 
   tags = {
@@ -100,18 +100,18 @@ resource "aws_route_table" "demo" {
   }
 }
 
-resource "aws_route_table_association" "demo" {
+resource "aws_route_table_association" "rtassoc" {
   count = var.enable_amazon ? var.aws_subnets : 0
 
-  subnet_id      = aws_subnet.demo.*.id[count.index]
-  route_table_id = aws_route_table.demo.0.id
+  subnet_id      = aws_subnet.public.*.id[count.index]
+  route_table_id = aws_route_table.rt.0.id
 }
 
 
 # Master IAM
-resource "aws_iam_role" "demo-cluster" {
+resource "aws_iam_role" "cluster" {
   count = var.enable_amazon ? 1 : 0
-  name  = "terraform-eks"
+  name  = var.aws_cluster_name
 
   assume_role_policy = <<POLICY
 {
@@ -134,28 +134,28 @@ POLICY
   }
 }
 
-resource "aws_iam_role_policy_attachment" "demo-cluster-AmazonEKSClusterPolicy" {
+resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSClusterPolicy" {
   count = var.enable_amazon ? 1 : 0
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role = aws_iam_role.demo-cluster.0.name
+  role = aws_iam_role.cluster.0.name
 }
 
-resource "aws_iam_role_policy_attachment" "demo-cluster-AmazonEKSServicePolicy" {
+resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSServicePolicy" {
   count = var.enable_amazon ? 1 : 0
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role = aws_iam_role.demo-cluster.0.name
+  role = aws_iam_role.cluster.0.name
 }
 
 
 # Master Security Group
-resource "aws_security_group" "demo-cluster" {
+resource "aws_security_group" "cluster" {
   count = var.enable_amazon ? 1 : 0
 
-  name = "terraform-eks"
+  name = var.aws_cluster_name
   description = "Cluster communication with worker nodes"
-  vpc_id = aws_vpc.demo.0.id
+  vpc_id = aws_vpc.main.0.id
 
   egress {
     from_port = 0
@@ -173,14 +173,14 @@ resource "aws_security_group" "demo-cluster" {
 # OPTIONAL: Allow inbound traffic from your local workstation external IP
 #           to the Kubernetes. See data section at the beginning of the
 #           AWS section.
-resource "aws_security_group_rule" "demo-cluster-ingress-workstation-https" {
+resource "aws_security_group_rule" "cluster-ingress-workstation-https" {
   count = var.enable_amazon ? 1 : 0
 
   cidr_blocks = [local.workstation-external-cidr]
   description = "Allow workstation to communicate with the cluster API Server"
   from_port = 443
   protocol = "tcp"
-  security_group_id = aws_security_group.demo-cluster.0.id
+  security_group_id = aws_security_group.cluster.0.id
   to_port = 443
   type = "ingress"
 }
@@ -188,31 +188,31 @@ resource "aws_security_group_rule" "demo-cluster-ingress-workstation-https" {
 
 # EKS Master
 
-resource "aws_eks_cluster" "demo" {
+resource "aws_eks_cluster" "cluster" {
   count = var.enable_amazon ? 1 : 0
 
   name = "${var.aws_cluster_name}-${var.random_cluster_suffix}"
-  role_arn = aws_iam_role.demo-cluster.0.arn
+  role_arn = aws_iam_role.cluster.0.arn
   #version = var.aws_eks_version
 
   vpc_config {
-    security_group_ids = ["${aws_security_group.demo-cluster.0.id}"]
-    subnet_ids = flatten(["${aws_subnet.demo[*].id}"])
+    security_group_ids = [aws_security_group.cluster.0.id]
+    subnet_ids = flatten([aws_subnet.public[*].id])
   }
 
   depends_on = [
-    "aws_iam_role_policy_attachment.demo-cluster-AmazonEKSClusterPolicy",
-    "aws_iam_role_policy_attachment.demo-cluster-AmazonEKSServicePolicy",
+    aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.cluster-AmazonEKSServicePolicy,
   ]
 }
 
 
 # EKS Worker IAM
 
-resource "aws_iam_role" "demo-node" {
+resource "aws_iam_role" "node" {
   count = var.enable_amazon ? 1 : 0
 
-  name = "terraform-eks-node"
+  name = "${var.aws_cluster_name}-node"
 
   assume_role_policy = <<POLICY
 {
@@ -234,38 +234,38 @@ POLICY
   }
 }
 
-resource "aws_iam_role_policy_attachment" "demo-node-AmazonEKSWorkerNodePolicy" {
+resource "aws_iam_role_policy_attachment" "node-AmazonEKSWorkerNodePolicy" {
   count      = var.enable_amazon ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.demo-node.0.name
+  role       = aws_iam_role.node.0.name
 }
 
-resource "aws_iam_role_policy_attachment" "demo-node-AmazonEKS_CNI_Policy" {
+resource "aws_iam_role_policy_attachment" "node-AmazonEKS_CNI_Policy" {
   count      = var.enable_amazon ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.demo-node.0.name
+  role       = aws_iam_role.node.0.name
 }
 
-resource "aws_iam_role_policy_attachment" "demo-node-AmazonEC2ContainerRegistryReadOnly" {
+resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOnly" {
   count      = var.enable_amazon ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.demo-node.0.name
+  role       = aws_iam_role.node.0.name
 }
 
-resource "aws_iam_instance_profile" "demo-node" {
+resource "aws_iam_instance_profile" "node" {
   count = var.enable_amazon ? 1 : 0
-  name  = "terraform-eks"
-  role  = aws_iam_role.demo-node.0.name
+  name  = var.aws_cluster_name
+  role  = aws_iam_role.node.0.name
 }
 
 
 # EKS Worker Security Groups
 
-resource "aws_security_group" "demo-node" {
+resource "aws_security_group" "node" {
   count       = var.enable_amazon ? 1 : 0
-  name        = "terraform-eks-node"
+  name        = "${var.aws_cluster_name}-node"
   description = "Security group for all nodes in the cluster"
-  vpc_id      = aws_vpc.demo.0.id
+  vpc_id      = aws_vpc.main.0.id
 
   egress {
     from_port   = 0
@@ -288,8 +288,8 @@ resource "aws_security_group_rule" "demo-node-ingress-self" {
   description              = "Allow node to communicate with each other"
   from_port                = 0
   protocol                 = "-1"
-  security_group_id        = aws_security_group.demo-node.0.id
-  source_security_group_id = aws_security_group.demo-node.0.id
+  security_group_id        = aws_security_group.node.0.id
+  source_security_group_id = aws_security_group.node.0.id
   to_port                  = 65535
   type                     = "ingress"
 }
@@ -299,21 +299,21 @@ resource "aws_security_group_rule" "demo-node-ingress-cluster" {
   description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
   from_port                = 1025
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.demo-node.0.id
-  source_security_group_id = aws_security_group.demo-cluster.0.id
+  security_group_id        = aws_security_group.node.0.id
+  source_security_group_id = aws_security_group.cluster.0.id
   to_port                  = 65535
   type                     = "ingress"
 }
 
 
 # EKS Master <--> Worker Security Group
-resource "aws_security_group_rule" "demo-cluster-ingress-node-https" {
+resource "aws_security_group_rule" "cluster-ingress-node-https" {
   count                    = var.enable_amazon ? 1 : 0
   description              = "Allow pods to communicate with the cluster API Server"
   from_port                = 443
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.demo-cluster.0.id
-  source_security_group_id = aws_security_group.demo-node.0.id
+  security_group_id        = aws_security_group.cluster.0.id
+  source_security_group_id = aws_security_group.node.0.id
   to_port                  = 443
   type                     = "ingress"
 }
@@ -331,18 +331,18 @@ locals {
   demo-node-userdata = <<USERDATA
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.demo.0.endpoint}' --b64-cluster-ca '${aws_eks_cluster.demo.0.certificate_authority.0.data}' '${var.aws_cluster_name}-${var.random_cluster_suffix}'
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.cluster.0.endpoint}' --b64-cluster-ca '${aws_eks_cluster.cluster.0.certificate_authority.0.data}' '${var.aws_cluster_name}-${var.random_cluster_suffix}'
 USERDATA
 }
 
-resource "aws_launch_configuration" "demo" {
+resource "aws_launch_configuration" "lc" {
   count = var.enable_amazon ? 1 : 0
   associate_public_ip_address = true
-  iam_instance_profile = aws_iam_instance_profile.demo-node.0.name
+  iam_instance_profile = aws_iam_instance_profile.node.0.name
   image_id = data.aws_ami.eks-worker.0.id
   instance_type = var.aws_instance_type
-  name_prefix = "terraform-eks"
-  security_groups = ["${aws_security_group.demo-node.0.id}"]
+  name_prefix = var.aws_cluster_name
+  security_groups = ["${aws_security_group.node.0.id}"]
   user_data_base64 = "${base64encode(local.demo-node-userdata)}"
 
   lifecycle {
@@ -351,14 +351,14 @@ resource "aws_launch_configuration" "demo" {
 }
 
 
-resource "aws_autoscaling_group" "demo" {
+resource "aws_autoscaling_group" "asg" {
   count = var.enable_amazon ? 1 : 0
   desired_capacity = var.eks_nodes
-  launch_configuration = aws_launch_configuration.demo.0.id
+  launch_configuration = aws_launch_configuration.lc.0.id
   max_size = var.eks_max_nodes
   min_size = var.eks_min_nodes
-  name = "terraform-eks"
-  vpc_zone_identifier = aws_subnet.demo.*.id
+  name = var.aws_cluster_name
+  vpc_zone_identifier = aws_subnet.public.*.id
 
   tag {
     key = "Project"
@@ -393,7 +393,7 @@ metadata:
   namespace: kube-system
 data:
   mapRoles: |
-    - rolearn: ${aws_iam_role.demo-node.0.arn}
+    - rolearn: ${aws_iam_role.node.0.arn}
       username: system:node:{{EC2PrivateDNSName}}
       groups:
         - system:bootstrappers
@@ -405,8 +405,8 @@ CONFIGMAPAWSAUTH
 apiVersion: v1
 clusters:
 - cluster:
-    server: ${aws_eks_cluster.demo.0.endpoint}
-    certificate-authority-data: ${aws_eks_cluster.demo.0.certificate_authority.0.data}
+    server: ${aws_eks_cluster.cluster.0.endpoint}
+    certificate-authority-data: ${aws_eks_cluster.cluster.0.certificate_authority.0.data}
   name: kubernetes
 contexts:
 - context:
@@ -435,7 +435,7 @@ resource "local_file" "kubeconfigaws" {
   content = local.kubeconfig
   filename = "${path.module}/kubeconfig_aws"
 
-  depends_on = [aws_eks_cluster.demo]
+  depends_on = [aws_eks_cluster.cluster]
 }
 
 resource "local_file" "eks_config_map_aws_auth" {
