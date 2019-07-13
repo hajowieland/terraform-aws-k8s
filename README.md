@@ -1,26 +1,26 @@
-# Terraform Kubernetes on Google Cloud
+# Terraform Kubernetes on Amazon Web Services
 
 This repository contains the Terraform module for creating a simple but ready-to-use Kubernetes Cluster on Amazon Web Services Elastic Kubernetes Service (EKS).
 
 It uses the latest available Kubernetes version available in the AWS region and creates a kubeconfig file at completion.
 
 
-- [Terraform Kubernetes on Google Cloud](#Terraform-Kubernetes-on-Google-Cloud)
-- [Requirements](#Requirements)
-- [Features](#Features)
-- [Notes](#Notes)
-- [Defaults](#Defaults)
-- [Runtime](#Runtime)
-- [Terraform Inputs](#Terraform-Inputs)
-- [Outputs](#Outputs)
+- [Terraform Kubernetes on Amazon Web Services](#Terraform-Kubernetes-on-Amazon-Web-Services)
+  - [Requirements](#Requirements)
+  - [Features](#Features)
+  - [Notes](#Notes)
+  - [Defaults](#Defaults)
+  - [Runtime](#Runtime)
+  - [Terraform Inputs](#Terraform-Inputs)
+  - [Outputs](#Outputs)
 
 
-# Requirements
+## Requirements
 
 You need an [AWS](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) account.
 
 
-# Features
+## Features
 
 * Always uses latest Kubernetes version available at AWS region
 * **kubeconfig** file generation
@@ -29,14 +29,14 @@ You need an [AWS](https://portal.aws.amazon.com/gp/aws/developer/registration/in
 * Auto Scaling Group for worker nodes
 
 
-# Notes
+## Notes
 
 * `export KUBECONFIG=./kubeconfig_eks` in repo root dir to use the generated kubeconfig file
 * Auto Downloads **aws-iam-authenticator** executable for AWS IAM Kubernetes authorization (Linux & macOS)
 * The `enable_amazon` variable is used in the [hajowieland/terraform-kubernetes-multi-cloud](https://github.com/hajowieland/terraform-kubernetes-multi-cloud) module
 
 
-# Defaults
+## Defaults
 
 See tables at the end for a comprehensive list of inputs and outputs.
 
@@ -48,7 +48,7 @@ See tables at the end for a comprehensive list of inputs and outputs.
 * Default Auto Scaling Group maximum: **3**
 
 
-# Runtime
+## Runtime
 
 `terraform apply`:
 
@@ -66,7 +66,7 @@ See tables at the end for a comprehensive list of inputs and outputs.
 10:57.32 total
 ```
 
-# Terraform Inputs
+## Terraform Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|:----:|:-----:|:-----:|
@@ -84,7 +84,7 @@ See tables at the end for a comprehensive list of inputs and outputs.
 
 
 
-# Outputs
+## Outputs
 
 | Name | Description |
 |------|-------------|
