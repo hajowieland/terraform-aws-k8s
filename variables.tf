@@ -22,11 +22,6 @@ variable "aws_profile" {
   default = "default"
 }
 
-# variable "workstation_ipv4" {
-#   description = "Workstation external IPv4 address"
-#   type = string
-# }
-
 variable "eks_nodes" {
   description = "EKS Kubernetes worker nodes, desired ASG capacity (e.g. `2`)"
   default     = 2
