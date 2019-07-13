@@ -10,7 +10,7 @@
 
 # Ignore generated kube files
 aws_config_map_aws_auth
-kubeconfig_eks
+kubeconfig_aws
 
 # Ignore aws-iam-authenticator executable
 aws-iam-authenticator
