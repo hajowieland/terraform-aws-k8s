@@ -52,7 +52,7 @@ See tables at the end for a comprehensive list of inputs and outputs.
 
 `terraform apply`:
 
-~10min
+~10-11min
 
 ```
 7.44s user
@@ -65,6 +65,13 @@ See tables at the end for a comprehensive list of inputs and outputs.
 4.51s system
 10:57.32 total
 ```
+
+```
+7.42s user
+3.98s system
+11:11.69 total
+```
+
 
 ## Terraform Inputs
 
