@@ -52,7 +52,7 @@ resource "aws_vpc" "main" {
     map(
       "Project", "eks",
       "ManagedBy", "terraform",
-      "kubernetes.io/cluster/${var.aws_cluster_name}-${var.random_cluster_suffix}", "shared",
+      "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared",
     )
   }"
 }
@@ -68,7 +68,7 @@ resource "aws_subnet" "public" {
     map(
       "Project", "k8s",
       "ManagedBy", "terraform",
-      "kubernetes.io/cluster/${var.aws_cluster_name}-${var.random_cluster_suffix}", "shared"
+      "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared"
     )
   }"
 }
@@ -191,7 +191,7 @@ resource "aws_security_group_rule" "cluster-ingress-workstation-https" {
 resource "aws_eks_cluster" "cluster" {
   count = var.enable_amazon ? 1 : 0
 
-  name = "${var.aws_cluster_name}-${var.random_cluster_suffix}"
+  name = "${var.aws_cluster_name}-${random_id.cluster_name.hex}"
   role_arn = aws_iam_role.cluster.0.arn
   #version = var.aws_eks_version
 
@@ -278,7 +278,7 @@ resource "aws_security_group" "node" {
     map(
      "Project", "k8s",
      "ManagedBy", "terraform",
-     "kubernetes.io/cluster/${var.aws_cluster_name}-${var.random_cluster_suffix}", "owned",
+     "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "owned",
     )
   }"
 }
@@ -331,7 +331,7 @@ locals {
   demo-node-userdata = <<USERDATA
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.cluster.0.endpoint}' --b64-cluster-ca '${aws_eks_cluster.cluster.0.certificate_authority.0.data}' '${var.aws_cluster_name}-${var.random_cluster_suffix}'
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.cluster.0.endpoint}' --b64-cluster-ca '${aws_eks_cluster.cluster.0.certificate_authority.0.data}' '${var.aws_cluster_name}-${random_id.cluster_name.hex}'
 USERDATA
 }
 
@@ -372,7 +372,7 @@ resource "aws_autoscaling_group" "asg" {
     propagate_at_launch = true
   }
   tag {
-    key = "kubernetes.io/cluster/${var.aws_cluster_name}-${var.random_cluster_suffix}"
+    key = "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}"
     value = "owned"
     propagate_at_launch = true
   }
@@ -425,7 +425,7 @@ users:
       args:
         - "token"
         - "-i"
-        - "${var.aws_cluster_name}-${var.random_cluster_suffix}"
+        - "${var.aws_cluster_name}-${random_id.cluster_name.hex}"
 KUBECONFIG
 }
 
