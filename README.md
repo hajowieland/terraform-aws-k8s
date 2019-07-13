@@ -22,17 +22,17 @@ You need an [AWS](https://portal.aws.amazon.com/gp/aws/developer/registration/in
 
 # Features
 
-* Always uses latest Kubernetes version available at Google Cloud location
+* Always uses latest Kubernetes version available at AWS region
 * **kubeconfig** file generation
-* Authentication via AWS IAM with [aws-iam-authenticator](https://github.com/kubernetes-sigs/aws-iam-authenticator) (for Linux and MacOS)
-* Nodes are available from workstation IP address only _(master_authorized_networks_config)_
+* Authentication via AWS IAM with [aws-iam-authenticator](https://github.com/kubernetes-sigs/aws-iam-authenticator) (for Linux and macOS)
+* Kubernetes cluster API access is available from workstation IP address only
 * Auto Scaling Group for worker nodes
 
 
 # Notes
 
 * `export KUBECONFIG=./kubeconfig_eks` in repo root dir to use the generated kubeconfig file
-* Download **aws-iam-authenticator** executable for AWS IAM Kubernetes authorization
+* Auto Downloads **aws-iam-authenticator** executable for AWS IAM Kubernetes authorization (Linux & macOS)
 * The `enable_amazon` variable is used in the [hajowieland/terraform-kubernetes-multi-cloud](https://github.com/hajowieland/terraform-kubernetes-multi-cloud) module
 
 
