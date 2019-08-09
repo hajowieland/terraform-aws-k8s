@@ -10,6 +10,7 @@
 
 # Ignore generated kube files
 aws-auth-cm.yaml
+aws_config_map_aws_auth
 kubeconfig_aws
 
 # Ignore aws-iam-authenticator executable
