@@ -48,13 +48,11 @@ resource "aws_vpc" "main" {
   count = var.enable_amazon ? 1 : 0
   cidr_block = var.aws_cidr_block
 
-  tags = "${
-    map(
+  tags = map(
       "Project", "eks",
       "ManagedBy", "terraform",
       "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared",
     )
-  }"
 }
 
 resource "aws_subnet" "public" {
@@ -64,13 +62,11 @@ resource "aws_subnet" "public" {
   cidr_block        = cidrsubnet(var.aws_cidr_block, 8, count.index)
   vpc_id            = aws_vpc.main.0.id
 
-  tags = "${
-    map(
+  tags = map(
       "Project", "k8s",
       "ManagedBy", "terraform",
       "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared"
     )
-  }"
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -274,13 +270,11 @@ resource "aws_security_group" "node" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = "${
-    map(
+  tags = map(
      "Project", "k8s",
      "ManagedBy", "terraform",
      "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "owned",
     )
-  }"
 }
 
 resource "aws_security_group_rule" "demo-node-ingress-self" {
@@ -342,12 +336,8 @@ resource "aws_launch_configuration" "lc" {
   image_id = data.aws_ami.eks-worker.0.id
   instance_type = var.aws_instance_type
   name_prefix = var.aws_cluster_name
-  security_groups = ["${aws_security_group.node.0.id}"]
-  user_data_base64 = "${base64encode(local.demo-node-userdata)}"
-
-  lifecycle {
-    create_before_destroy = true
-  }
+  security_groups = [aws_security_group.node[0].id]
+  user_data_base64 = base64encode(local.demo-node-userdata)
 }
 
 
@@ -395,7 +385,6 @@ resource "aws_autoscaling_group" "asg" {
 locals {
   count = var.enable_amazon ? 1 : 0
   config_map_aws_auth = <<CONFIGMAPAWSAUTH
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -411,7 +400,6 @@ data:
 CONFIGMAPAWSAUTH
 
   kubeconfig = <<KUBECONFIG
-
 apiVersion: v1
 clusters:
 - cluster:
