@@ -361,6 +361,12 @@ resource "aws_autoscaling_group" "asg" {
   vpc_zone_identifier = aws_subnet.public.*.id
 
   tag {
+    key = "Name"
+    value = var.aws_cluster_name
+    propagate_at_launch = true
+  }
+
+  tag {
     key = "Project"
     value = "k8s"
     propagate_at_launch = true
@@ -375,6 +381,10 @@ resource "aws_autoscaling_group" "asg" {
     key = "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}"
     value = "owned"
     propagate_at_launch = true
+  }
+
+  lifecycle {
+      create_before_destroy = true
   }
 }
 
