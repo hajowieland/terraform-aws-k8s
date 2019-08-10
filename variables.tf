@@ -6,8 +6,8 @@ variable "enable_amazon" {
 
 variable "random_cluster_suffix" {
   description = "Random 6 byte hex suffix for cluster name"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "aws_region" {
@@ -18,26 +18,26 @@ variable "aws_region" {
 
 variable "aws_profile" {
   description = "AWS cli profile (e.g. `default`)"
-  type = string
-  default = "default"
+  type        = string
+  default     = "default"
 }
 
 variable "eks_nodes" {
   description = "EKS Kubernetes worker nodes, desired ASG capacity (e.g. `2`)"
   default     = 2
-  type = number
+  type        = number
 }
 
 variable "eks_min_nodes" {
   description = "EKS Kubernetes worker nodes, minimal ASG capacity (e.g. `1`)"
   default     = 1
-  type = number
+  type        = number
 }
 
 variable "eks_max_nodes" {
   description = "EKS Kubernetes worker nodes, maximal ASG capacity (e.g. `3`)"
   default     = 3
-  type = number
+  type        = number
 }
 
 variable "aws_cidr_block" {
@@ -48,7 +48,7 @@ variable "aws_cidr_block" {
 
 variable "aws_subnets" {
   description = "List of 8-bit numbers of subnets base_cidr_block"
-  type = number
+  type        = number
   default     = 2
 }
 
