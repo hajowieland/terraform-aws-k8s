@@ -2,17 +2,6 @@ resource "random_id" "cluster_name" {
   byte_length = 6
 }
 
-
-resource "random_id" "username" {
-  count    = var.enable_amazon ? 1 : 0
-  byte_length = 14
-}
-
-resource "random_id" "password" {
-  count    = var.enable_amazon ? 1 : 0
-  byte_length = 18
-}
-
 ## Get your workstation external IPv4 address:
 data "http" "workstation-external-ip" {
   url = "http://ipv4.icanhazip.com"
@@ -45,14 +34,14 @@ data "aws_ami" "eks-worker" {
 
 # VPC
 resource "aws_vpc" "main" {
-  count = var.enable_amazon ? 1 : 0
+  count      = var.enable_amazon ? 1 : 0
   cidr_block = var.aws_cidr_block
 
   tags = map(
-      "Project", "eks",
-      "ManagedBy", "terraform",
-      "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared",
-    )
+    "Project", "eks",
+    "ManagedBy", "terraform",
+    "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared",
+  )
 }
 
 resource "aws_subnet" "public" {
@@ -63,10 +52,10 @@ resource "aws_subnet" "public" {
   vpc_id            = aws_vpc.main.0.id
 
   tags = map(
-      "Project", "k8s",
-      "ManagedBy", "terraform",
-      "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared"
-    )
+    "Project", "k8s",
+    "ManagedBy", "terraform",
+    "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "shared"
+  )
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -75,7 +64,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.0.id
 
   tags = {
-    Project = "k8s",
+    Project   = "k8s",
     ManagedBy = "terraform"
   }
 }
@@ -91,7 +80,7 @@ resource "aws_route_table" "rt" {
   }
 
   tags = {
-    Project = "k8s",
+    Project   = "k8s",
     ManagedBy = "terraform"
   }
 }
@@ -125,7 +114,7 @@ resource "aws_iam_role" "cluster" {
 POLICY
 
   tags = {
-    Project = "k8s",
+    Project   = "k8s",
     ManagedBy = "terraform"
   }
 }
@@ -134,14 +123,14 @@ resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSClusterPolicy" {
   count = var.enable_amazon ? 1 : 0
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role = aws_iam_role.cluster.0.name
+  role       = aws_iam_role.cluster.0.name
 }
 
 resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSServicePolicy" {
   count = var.enable_amazon ? 1 : 0
 
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role = aws_iam_role.cluster.0.name
+  role       = aws_iam_role.cluster.0.name
 }
 
 
@@ -149,19 +138,19 @@ resource "aws_iam_role_policy_attachment" "cluster-AmazonEKSServicePolicy" {
 resource "aws_security_group" "cluster" {
   count = var.enable_amazon ? 1 : 0
 
-  name = var.aws_cluster_name
+  name        = var.aws_cluster_name
   description = "Cluster communication with worker nodes"
-  vpc_id = aws_vpc.main.0.id
+  vpc_id      = aws_vpc.main.0.id
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Project = "k8s",
+    Project   = "k8s",
     ManagedBy = "terraform"
   }
 }
@@ -172,13 +161,13 @@ resource "aws_security_group" "cluster" {
 resource "aws_security_group_rule" "cluster-ingress-workstation-https" {
   count = var.enable_amazon ? 1 : 0
 
-  cidr_blocks = [local.workstation-external-cidr]
-  description = "Allow workstation to communicate with the cluster API Server"
-  from_port = 443
-  protocol = "tcp"
+  cidr_blocks       = [local.workstation-external-cidr]
+  description       = "Allow workstation to communicate with the cluster API Server"
+  from_port         = 443
+  protocol          = "tcp"
   security_group_id = aws_security_group.cluster.0.id
-  to_port = 443
-  type = "ingress"
+  to_port           = 443
+  type              = "ingress"
 }
 
 
@@ -187,13 +176,13 @@ resource "aws_security_group_rule" "cluster-ingress-workstation-https" {
 resource "aws_eks_cluster" "cluster" {
   count = var.enable_amazon ? 1 : 0
 
-  name = "${var.aws_cluster_name}-${random_id.cluster_name.hex}"
+  name     = "${var.aws_cluster_name}-${random_id.cluster_name.hex}"
   role_arn = aws_iam_role.cluster.0.arn
   #version = var.aws_eks_version
 
   vpc_config {
     security_group_ids = [aws_security_group.cluster.0.id]
-    subnet_ids = flatten([aws_subnet.public[*].id])
+    subnet_ids         = flatten([aws_subnet.public[*].id])
   }
 
   depends_on = [
@@ -225,7 +214,7 @@ resource "aws_iam_role" "node" {
 }
 POLICY
   tags = {
-    Project = "k8s",
+    Project   = "k8s",
     ManagedBy = "terraform"
   }
 }
@@ -271,10 +260,10 @@ resource "aws_security_group" "node" {
   }
 
   tags = map(
-     "Project", "k8s",
-     "ManagedBy", "terraform",
-     "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "owned",
-    )
+    "Project", "k8s",
+    "ManagedBy", "terraform",
+    "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}", "owned",
+  )
 }
 
 resource "aws_security_group_rule" "demo-node-ingress-self" {
@@ -330,51 +319,51 @@ USERDATA
 }
 
 resource "aws_launch_configuration" "lc" {
-  count = var.enable_amazon ? 1 : 0
+  count                       = var.enable_amazon ? 1 : 0
   associate_public_ip_address = true
-  iam_instance_profile = aws_iam_instance_profile.node.0.name
-  image_id = data.aws_ami.eks-worker.0.id
-  instance_type = var.aws_instance_type
-  name_prefix = var.aws_cluster_name
-  security_groups = [aws_security_group.node[0].id]
-  user_data_base64 = base64encode(local.demo-node-userdata)
+  iam_instance_profile        = aws_iam_instance_profile.node.0.name
+  image_id                    = data.aws_ami.eks-worker.0.id
+  instance_type               = var.aws_instance_type
+  name_prefix                 = var.aws_cluster_name
+  security_groups             = [aws_security_group.node[0].id]
+  user_data_base64            = base64encode(local.demo-node-userdata)
 }
 
 
 resource "aws_autoscaling_group" "asg" {
-  count = var.enable_amazon ? 1 : 0
-  desired_capacity = var.eks_nodes
+  count                = var.enable_amazon ? 1 : 0
+  desired_capacity     = var.eks_nodes
   launch_configuration = aws_launch_configuration.lc.0.id
-  max_size = var.eks_max_nodes
-  min_size = var.eks_min_nodes
-  name = var.aws_cluster_name
-  vpc_zone_identifier = aws_subnet.public.*.id
+  max_size             = var.eks_max_nodes
+  min_size             = var.eks_min_nodes
+  name                 = var.aws_cluster_name
+  vpc_zone_identifier  = aws_subnet.public.*.id
 
   tag {
-    key = "Name"
-    value = var.aws_cluster_name
+    key                 = "Name"
+    value               = var.aws_cluster_name
     propagate_at_launch = true
   }
 
   tag {
-    key = "Project"
-    value = "k8s"
+    key                 = "Project"
+    value               = "k8s"
     propagate_at_launch = true
   }
 
   tag {
-    key = "ManagedBy"
-    value = "terraform"
+    key                 = "ManagedBy"
+    value               = "terraform"
     propagate_at_launch = true
   }
   tag {
-    key = "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}"
-    value = "owned"
+    key                 = "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.hex}"
+    value               = "owned"
     propagate_at_launch = true
   }
 
   lifecycle {
-      create_before_destroy = true
+    create_before_destroy = true
   }
 }
 
@@ -383,7 +372,7 @@ resource "aws_autoscaling_group" "asg" {
 # EKS kubeconf
 
 locals {
-  count = var.enable_amazon ? 1 : 0
+  count               = var.enable_amazon ? 1 : 0
   config_map_aws_auth = <<CONFIGMAPAWSAUTH
 apiVersion: v1
 kind: ConfigMap
@@ -429,16 +418,16 @@ KUBECONFIG
 
 
 resource "local_file" "kubeconfigaws" {
-  count = var.enable_amazon ? 1 : 0
-  content = local.kubeconfig
+  count    = var.enable_amazon ? 1 : 0
+  content  = local.kubeconfig
   filename = "${path.module}/kubeconfig_aws"
 
   depends_on = [aws_eks_cluster.cluster]
 }
 
 resource "local_file" "eks_config_map_aws_auth" {
-  count = var.enable_amazon ? 1 : 0
-  content = local.config_map_aws_auth
+  count    = var.enable_amazon ? 1 : 0
+  content  = local.config_map_aws_auth
   filename = "${path.module}/aws_config_map_aws_auth"
 
   depends_on = [local_file.kubeconfigaws]
