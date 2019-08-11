@@ -1,9 +1,11 @@
 resource "random_id" "cluster_name" {
+  count = var.enable_amazon ? 1 : 0
   byte_length = 6
 }
 
 ## Get your workstation external IPv4 address:
 data "http" "workstation-external-ip" {
+  count = var.enable_amazon ? 1 : 0
   url = "http://ipv4.icanhazip.com"
 }
 
