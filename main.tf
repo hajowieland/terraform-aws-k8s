@@ -31,7 +31,6 @@ data "aws_ami" "eks-worker" {
 }
 
 
-
 # VPC
 resource "aws_vpc" "main" {
   count      = var.enable_amazon ? 1 : 0
@@ -172,7 +171,6 @@ resource "aws_security_group_rule" "cluster-ingress-workstation-https" {
 
 
 # EKS Master
-
 resource "aws_eks_cluster" "cluster" {
   count = var.enable_amazon ? 1 : 0
 
@@ -193,7 +191,6 @@ resource "aws_eks_cluster" "cluster" {
 
 
 # EKS Worker IAM
-
 resource "aws_iam_role" "node" {
   count = var.enable_amazon ? 1 : 0
 
@@ -245,7 +242,6 @@ resource "aws_iam_instance_profile" "node" {
 
 
 # EKS Worker Security Groups
-
 resource "aws_security_group" "node" {
   count       = var.enable_amazon ? 1 : 0
   name        = "${var.aws_cluster_name}-node"
@@ -304,7 +300,6 @@ resource "aws_security_group_rule" "cluster-ingress-node-https" {
 
 # EKS Worker Nodes AutoScalingGroup
 
-
 # EKS currently documents this required userdata for EKS worker nodes to
 # properly configure Kubernetes applications on the EC2 instance.
 # We implement a Terraform local here to simplify Base64 encoding this
@@ -328,7 +323,6 @@ resource "aws_launch_configuration" "lc" {
   security_groups             = [aws_security_group.node[0].id]
   user_data_base64            = base64encode(local.demo-node-userdata)
 }
-
 
 resource "aws_autoscaling_group" "asg" {
   count                = var.enable_amazon ? 1 : 0
@@ -370,7 +364,6 @@ resource "aws_autoscaling_group" "asg" {
 
 # EKS Join Worker Nodes
 # EKS kubeconf
-
 locals {
   count               = var.enable_amazon ? 1 : 0
   config_map_aws_auth = <<CONFIGMAPAWSAUTH
@@ -415,7 +408,6 @@ users:
         - "${var.aws_cluster_name}-${random_id.cluster_name.hex}"
 KUBECONFIG
 }
-
 
 resource "local_file" "kubeconfigaws" {
   count    = var.enable_amazon ? 1 : 0
