@@ -1,12 +1,12 @@
 resource "random_id" "cluster_name" {
-  count = var.enable_amazon ? 1 : 0
+  count       = var.enable_amazon ? 1 : 0
   byte_length = 6
 }
 
 ## Get your workstation external IPv4 address:
 data "http" "workstation-external-ip" {
   count = var.enable_amazon ? 1 : 0
-  url = "http://ipv4.icanhazip.com"
+  url   = "http://ipv4.icanhazip.com"
 }
 
 locals {
@@ -55,7 +55,7 @@ resource "aws_subnet" "public" {
   tags = map(
     "Project", "k8s",
     "ManagedBy", "terraform",
-    "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name[count.index].hex}", "shared"
+    "kubernetes.io/cluster/${var.aws_cluster_name}-${random_id.cluster_name.0.hex}", "shared"
   )
 }
 
