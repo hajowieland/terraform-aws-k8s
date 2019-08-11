@@ -4,6 +4,10 @@ This repository contains the Terraform module for creating a simple but ready-to
 
 It uses the latest available Kubernetes version available in the AWS region and creates a kubeconfig file at completion.
 
+<p align="center">
+<img alt="AWS Logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/320px-Amazon_Web_Services_Logo.svg.png">
+</p>
+
 
 - [Terraform Kubernetes on Amazon Web Services](#Terraform-Kubernetes-on-Amazon-Web-Services)
   - [Requirements](#Requirements)
