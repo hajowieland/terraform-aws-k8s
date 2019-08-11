@@ -52,7 +52,6 @@ variable "aws_subnets" {
   default     = 2
 }
 
-
 variable "aws_cluster_name" {
   description = "AWS ELS cluster name (e.g. `k8s-eks`)"
   type        = string
